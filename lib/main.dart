@@ -18,94 +18,94 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: Wrapper(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  final counterBloc = CounterBloc();
-  final userBloc = UserBloc();
+class Wrapper extends StatelessWidget {
+  const Wrapper({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<CounterBloc>(create: (_) => counterBloc),
-        BlocProvider<UserBloc>(create: (_) => UserBloc()),
-      ],
-      child: BlocProvider<CounterBloc>(
-        create: (context) => counterBloc,
-        child: Scaffold(
-          floatingActionButton: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                onPressed: () {
-                  counterBloc.add(CounterIncEvent());
-                },
-                icon: const Icon(Icons.plus_one),
-              ),
-              IconButton(
-                onPressed: () {
-                  counterBloc.add(CounterDecEvent());
-                },
-                icon: const Icon(Icons.exposure_minus_1),
-              ),
-              IconButton(
-                onPressed: () {
-                  userBloc.add(UserGetUserEvent(counterBloc.state));
-                },
-                icon: const Icon(Icons.supervised_user_circle_outlined),
-              ),
-              IconButton(
-                onPressed: () {
-                  userBloc.add(UserGetUserJob(counterBloc.state));
-                },
-                icon: const Icon(Icons.work),
-              ),
-            ],
-          ),
-          body: SafeArea(
-            child: Center(
-                child: Column(
-              children: [
-                BlocBuilder<CounterBloc, int>(
-                  bloc: counterBloc,
-                  builder: (context, state) {
-                    return Text(state.toString(),
-                        style: TextStyle(fontSize: 33));
-                  },
-                ),
-                BlocBuilder<UserBloc, UserState>(
-                  bloc: userBloc,
-                  builder: (context, state) {
-                    final users = state.users;
-                    final jobs = state.job;
+    return MultiBlocProvider(providers: [
+      BlocProvider<CounterBloc>(create: (_) => CounterBloc()),
+      BlocProvider<UserBloc>(create: (_) => UserBloc()),
+    ], child: MyHomePage());
+  }
+}
 
-                    return Column(
-                      children: [
-                        if (state.isLoading) const CircularProgressIndicator(),
-                        if (users.isNotEmpty)
-                          ...users.map((el) => Text(el.name + "use")),
-                        if (jobs.isNotEmpty) ...jobs.map((el) => Text(el.id + "job"))
-                      ],
-                    );
-                  },
-                ),
-              ],
-            )),
+class MyHomePage extends StatelessWidget {
+  const MyHomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            onPressed: () {
+              context.read<CounterBloc>().add(CounterIncEvent());
+            },
+            icon: const Icon(Icons.plus_one),
           ),
-        ),
+          IconButton(
+            onPressed: () {
+              context.read<CounterBloc>().add(CounterDecEvent());
+            },
+            icon: const Icon(Icons.exposure_minus_1),
+          ),
+          IconButton(
+            onPressed: () {
+              context
+                  .read<UserBloc>()
+                  .add(UserGetUserEvent(context.read<CounterBloc>().state));
+            },
+            icon: const Icon(Icons.supervised_user_circle_outlined),
+          ),
+          IconButton(
+            onPressed: () {
+              context
+                  .read<UserBloc>()
+                  .add(UserGetUserJob(context.read<CounterBloc>().state));
+            },
+            icon: const Icon(Icons.work),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Center(
+            child: Column(
+          children: [
+            BlocBuilder<CounterBloc, int>(
+              builder: (context, state) {
+                final users =
+                    context.select((UserBloc bloc) => bloc.state.users);
+
+                return Column(
+                  children: [
+                    Text(state.toString(), style: TextStyle(fontSize: 33)),
+                    if (users.isNotEmpty)
+                      ...users.map((el) => Text(el.name + "use")),
+                  ],
+                );
+              },
+            ),
+            BlocBuilder<UserBloc, UserState>(
+              builder: (context, state) {
+                final jobs = context.select((UserBloc bloc) => bloc.state.job);
+                return Column(
+                  children: [
+                    if (state.isLoading) const CircularProgressIndicator(),
+                    if (jobs.isNotEmpty)
+                      ...jobs.map((el) => Text(el.id + "job"))
+                  ],
+                );
+              },
+            ),
+          ],
+        )),
       ),
     );
   }
