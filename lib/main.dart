@@ -28,9 +28,10 @@ class Wrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final counterBloc = CounterBloc();
     return MultiBlocProvider(providers: [
-      BlocProvider<CounterBloc>(create: (_) => CounterBloc()),
-      BlocProvider<UserBloc>(create: (_) => UserBloc()),
+      BlocProvider<CounterBloc>(create: (_) => counterBloc),
+      BlocProvider<UserBloc>(create: (_) => UserBloc(counterBloc)),
     ], child: MyHomePage());
   }
 }
