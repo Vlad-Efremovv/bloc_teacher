@@ -1,5 +1,4 @@
-import 'package:bloc_teacher/counter_bloc.dart';
-import 'package:bloc_teacher/user_bloc/user_bloc.dart';
+import 'package:bloc_teacher/search_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -8,135 +7,65 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final counterBloc = CounterBloc();
     return MultiBlocProvider(
       providers: [
-        BlocProvider<CounterBloc>(
-          create: (_) => counterBloc,
-          lazy: false,
-        ),
-        BlocProvider<UserBloc>(
-          create: (_) => UserBloc(counterBloc),
-          lazy: true,
+        BlocProvider(
+          create: (context) => SearchBloc(),
         ),
       ],
       child: MaterialApp(
-        title: 'Flutter Demo',
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
+          textTheme: const TextTheme(
+              // bodyText2: TextStyle(fontSize: 33),
+              // subtitle1: TextStyle(fontSize: 22),
+              ),
         ),
-        home: MyHomePage(),
+        home: const Scaffold(
+          body: SafeArea(
+            child: MyHomePage(),
+          ),
+        ),
       ),
     );
   }
 }
 
 class MyHomePage extends StatelessWidget {
-  const MyHomePage({super.key});
+  const MyHomePage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      floatingActionButton: BlocConsumer<CounterBloc, int>(
-        listenWhen: (prev, current) => prev > current,
-        listener: (context, state) {
-          if (state == 0) {
-            Scaffold.of(context).showBottomSheet((_) => Container(
-                width: double.infinity,
-                color: Colors.blue,
-                child: Text("state is 0")));
-          }
-        },
-        builder: (context, state) => Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(state.toString()),
-            IconButton(
-              onPressed: () {
-                context.read<CounterBloc>().add(CounterIncEvent());
-              },
-              icon: const Icon(Icons.plus_one),
-            ),
-            IconButton(
-              onPressed: () {
-                context.read<CounterBloc>().add(CounterDecEvent());
-              },
-              icon: const Icon(Icons.exposure_minus_1),
-            ),
-            IconButton(
-              onPressed: () {
-                context
-                    .read<UserBloc>()
-                    .add(UserGetUserEvent(context.read<CounterBloc>().state));
-              },
-              icon: const Icon(Icons.supervised_user_circle_outlined),
-            ),
-            IconButton(
-              onPressed: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => BlocProvider.value(
-                            value: context.read<UserBloc>(), child: Job())));
-                context
-                    .read<UserBloc>()
-                    .add(UserGetUserJob(context.read<CounterBloc>().state));
-              },
-              icon: const Icon(Icons.work),
-            ),
-          ],
+    final users = context.select((SearchBloc bloc) => bloc.state.users);
+    return Column(
+      children: [
+        const Text('Search User'),
+        const SizedBox(height: 20),
+        TextFormField(
+          decoration: const InputDecoration(
+            hintText: 'User name',
+            prefixIcon: Icon(Icons.search),
+            border: OutlineInputBorder(),
+          ),
+          onChanged: (value) {
+            context.read<SearchBloc>().add(SearchUserEvent(value));
+          },
         ),
-      ),
-      body: SafeArea(
-        child: Center(
-            child: Column(
-          children: [
-            BlocBuilder<CounterBloc, int>(
-              builder: (context, state) {
-                final users =
-                    context.select((UserBloc bloc) => bloc.state.users);
-
-                return Column(
-                  children: [
-                    Text(state.toString(), style: TextStyle(fontSize: 33)),
-                    if (users.isNotEmpty)
-                      ...users.map((el) => Text(el.name + "use")),
-                  ],
+        if (users.isNotEmpty)
+          Expanded(
+            child: ListView.builder(
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(users[index]['username']),
                 );
               },
+              itemCount: users.length,
             ),
-          ],
-        )),
-      ),
-    );
-  }
-}
-
-class Job extends StatelessWidget {
-  const Job({
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(),
-      body: BlocBuilder<UserBloc, UserState>(
-        builder: (context, state) {
-          final jobs = context.select((UserBloc bloc) => bloc.state.job);
-          return Column(
-            children: [
-              if (state.isLoading) const CircularProgressIndicator(),
-              if (jobs.isNotEmpty) ...jobs.map((el) => Text(el.id + "job"))
-            ],
-          );
-        },
-      ),
+          ),
+      ],
     );
   }
 }
