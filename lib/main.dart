@@ -41,11 +41,21 @@ class MyHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        floatingActionButton: Column(
+    return Scaffold(
+      floatingActionButton: BlocConsumer<CounterBloc, int>(
+        listenWhen: (prev, current) => prev > current,
+        listener: (context, state) {
+          if (state == 0) {
+            Scaffold.of(context).showBottomSheet((_) => Container(
+                width: double.infinity,
+                color: Colors.blue,
+                child: Text("state is 0")));
+          }
+        },
+        builder: (context, state) => Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Text(state.toString()),
             IconButton(
               onPressed: () {
                 context.read<CounterBloc>().add(CounterIncEvent());
@@ -81,27 +91,27 @@ class MyHomePage extends StatelessWidget {
             ),
           ],
         ),
-        body: SafeArea(
-          child: Center(
-              child: Column(
-            children: [
-              BlocBuilder<CounterBloc, int>(
-                builder: (context, state) {
-                  final users =
-                      context.select((UserBloc bloc) => bloc.state.users);
+      ),
+      body: SafeArea(
+        child: Center(
+            child: Column(
+          children: [
+            BlocBuilder<CounterBloc, int>(
+              builder: (context, state) {
+                final users =
+                    context.select((UserBloc bloc) => bloc.state.users);
 
-                  return Column(
-                    children: [
-                      Text(state.toString(), style: TextStyle(fontSize: 33)),
-                      if (users.isNotEmpty)
-                        ...users.map((el) => Text(el.name + "use")),
-                    ],
-                  );
-                },
-              ),
-            ],
-          )),
-        ),
+                return Column(
+                  children: [
+                    Text(state.toString(), style: TextStyle(fontSize: 33)),
+                    if (users.isNotEmpty)
+                      ...users.map((el) => Text(el.name + "use")),
+                  ],
+                );
+              },
+            ),
+          ],
+        )),
       ),
     );
   }
